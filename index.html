@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector de Aura & Fantasmas | Bardeo Gen Z</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Space Grotesk & Syne for bold, irreverent typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <!-- Tone.js for procedural sound effects (no external audio URLs needed) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Space Grotesk"', 'sans-serif'],
+                        display: ['"Syne"', 'sans-serif'],
+                    },
+                    colors: {
+                        darkbg: '#09090b',
+                        cardbg: '#121216',
+                        neonpink: '#ff0055',
+                        neonpurple: '#a855f7',
+                        neonyellow: '#eaff00',
+                        neoncyan: '#00f0ff',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom animations for impact, flash and shake effects */
+        @keyframes impactShake {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            15% { transform: translate(-8px, -6px) rotate(-1.5deg) scale(1.03); }
+            30% { transform: translate(8px, 4px) rotate(1.5deg) scale(1.02); }
+            45% { transform: translate(-6px, 5px) rotate(-1deg) scale(1.01); }
+            60% { transform: translate(6px, -4px) rotate(1deg) scale(1); }
+            75% { transform: translate(-3px, 2px) rotate(-0.5deg); }
+            100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        }
+
+        @keyframes flashCard {
+            0% { background-color: rgba(255, 0, 85, 0.22); }
+            100% { background-color: #121216; }
+        }
+
+        .animate-impact {
+            animation: impactShake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both,
+                       flashCard 0.45s ease-out;
+        }
+
+        /* Subtle background grid pattern */
+        .bg-grid {
+            background-size: 36px 36px;
+            background-image: 
+                linear-gradient(to right, rgba(168, 85, 247, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 0, 85, 0.04) 1px, transparent 1px);
+        }
+
+        /* Neo-brutalist button shadow press effect */
+        .btn-brutal {
+            box-shadow: 0 6px 0 #7e002a, 0 12px 28px rgba(255, 0, 85, 0.4);
+            transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.2s ease;
+        }
+        .btn-brutal:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #7e002a, 0 4px 10px rgba(255, 0, 85, 0.45);
+        }
+
+        /* Custom subtle scrollbar for target pills on mobile */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-darkbg bg-grid text-zinc-100 min-h-screen flex flex-col justify-between selection:bg-neonpink selection:text-white overflow-x-hidden">
+
+    <!-- Top Header & Stats Bar -->
+    <header class="w-full max-w-4xl mx-auto px-4 pt-5 pb-2 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neonpink to-neonpurple flex items-center justify-center text-white font-display font-extrabold text-xl shadow-lg shadow-neonpink/30 rotate-[-3deg]">
+                👻
+            </div>
+            <div>
+                <h1 class="font-display font-extrabold text-base sm:text-xl tracking-tight leading-none text-white">
+                    AURA<span class="text-neonpink">&</span>FANTASMAS
+                </h1>
+                <p class="text-[11px] sm:text-xs text-zinc-400">Detector oficial de inútiles y vendehumo</p>
+            </div>
+        </div>
+
+        <!-- Controls: Voice Toggle, Sound FX Toggle & Counters -->
+        <div class="flex items-center gap-2">
+            <!-- Sound FX Toggle -->
+            <button id="sfxToggleBtn" title="Activar/Desactivar sonidos de impacto" class="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 transition flex items-center gap-1.5 text-xs font-medium">
+                <span id="sfxIcon">🔊</span>
+                <span class="hidden sm:inline">FX</span>
+            </button>
+
+            <!-- Auto-Voice Toggle -->
+            <button id="voiceToggleBtn" title="Leer bardeos en voz alta automáticamente" class="p-2.5 rounded-xl bg-zinc-900 border border-neoncyan/40 text-neoncyan hover:bg-neoncyan/10 transition flex items-center gap-1.5 text-xs font-bold">
+                <span id="voiceIcon">🗣️</span>
+                <span>Voz: <span id="voiceStatusText">ON</span></span>
+            </button>
+
+            <!-- Fantasmas Expuestos Counter Badge -->
+            <div class="px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-1.5">
+                <span class="text-[11px] text-zinc-400 uppercase tracking-wider font-bold">Fantasmas:</span>
+                <span id="insultCounter" class="font-display font-extrabold text-neonyellow text-sm sm:text-base">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Interactive Area -->
+    <main class="w-full max-w-3xl mx-auto px-4 py-4 sm:py-6 flex-1 flex flex-col items-center justify-center gap-4 sm:gap-5">
+        
+        <!-- Intensity Selector Pills -->
+        <div class="w-full max-w-lg bg-zinc-900/90 p-1.5 rounded-2xl border border-zinc-800 grid grid-cols-3 gap-1.5 shadow-xl">
+            <button data-level="suave" class="level-btn py-2 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-zinc-400 hover:text-white flex flex-col sm:flex-row items-center justify-center gap-1">
+                <span>😏 Suave</span>
+                <span class="text-[10px] opacity-80 font-mono">(-500 Aura)</span>
+            </button>
+            <button data-level="picante" class="level-btn py-2 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-neonpink text-white shadow-md shadow-neonpink/25 flex flex-col sm:flex-row items-center justify-center gap-1">
+                <span>🌶️ Picante</span>
+                <span class="text-[10px] opacity-90 font-mono">(-5000 Aura)</span>
+            </button>
+            <button data-level="sin_piedad" class="level-btn py-2 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all text-zinc-400 hover:text-white flex flex-col sm:flex-row items-center justify-center gap-1">
+                <span>💀 Sin Piedad</span>
+                <span class="text-[10px] opacity-80 font-mono">(-∞ Aura)</span>
+            </button>
+        </div>
+
+        <!-- Target Name Selector (Todos Aleatorio + 10 Exact Names) -->
+        <div class="w-full">
+            <div class="flex items-center justify-between mb-1.5 px-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">🎯 Elegir víctima del grupo:</span>
+                <span id="totalAuraCounter" class="text-[11px] font-mono font-bold text-neonpurple">Aura total destruida: 0</span>
+            </div>
+            <div id="targetSelector" class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 bg-zinc-900/70 p-2 rounded-2xl border border-zinc-800/90">
+                <button data-target="ALL" class="target-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-neonpurple text-white shadow-md shadow-neonpurple/30">
+                    🎲 Todos (Aleatorio)
+                </button>
+                <!-- Individual target pills injected/rendered cleanly -->
+                <button data-target="Tadeo" class="target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700">Tadeo</button>
+                <button data-target="Franco" class="target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700">Franco</button>
+                <button data-target="Nico" class="target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700">Nico</button>
+                <button data-target="César" class="target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700">César</button>
+                <button data-target="Joaquín" class="target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700">Joaquín</button>
+                <button data-target="Fabri" class="target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700">Fabri</button>
+                <button data-target="Josué" class="target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700">Josué</button>
+                <button data-target="Alejandro" class="target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700">Alejandro</button>
+                <button data-target="Enzo" class="target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700">Enzo</button>
+                <button data-target="Valentino" class="target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700">Valentino</button>
+            </div>
+        </div>
+
+        <!-- Insult Display Card -->
+        <div id="insultCard" class="w-full relative bg-cardbg border-2 border-zinc-800 rounded-3xl p-5 sm:p-8 md:p-10 shadow-2xl transition-colors duration-300 flex flex-col justify-between min-h-[250px] sm:min-h-[280px]">
+            <!-- Top Row: Target Victim Badge + Aura Restada Meter -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <div class="flex items-center gap-2">
+                    <span id="victimBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-neonpurple/20 text-neonpurple border border-neonpurple/40">
+                        🎯 Objetivo: Esperando víctima
+                    </span>
+                    <span id="intensityBadge" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-neonpink/15 text-neonpink border border-neonpink/30">
+                        🌶️ Picante
+                    </span>
+                </div>
+
+                <!-- Visual Aura Restada Pill -->
+                <div id="auraLossBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/80 border border-red-500/40 text-red-400 font-mono font-extrabold text-xs sm:text-sm shadow-inner">
+                    <span>📉</span>
+                    <span id="auraLossText">-0 Aura</span>
+                </div>
+            </div>
+
+            <!-- The Insult / Roast Text -->
+            <div class="my-auto py-3">
+                <p id="insultText" class="font-display font-bold text-xl sm:text-2xl md:text-3xl text-white leading-snug tracking-tight text-center">
+                    Tocá <span class="text-neonpink">BARDEAR AHORA</span> para exponer el aura negativa de Tadeo, Franco, Nico, César, Joaquín, Fabri, Josué, Alejandro, Enzo o Valentino.
+                </p>
+            </div>
+
+            <!-- Card Action Toolbar (Speak again & Copy for WhatsApp/TikTok) -->
+            <div class="mt-5 pt-4 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-2">
+                <button id="speakNowBtn" class="px-3.5 py-2.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs sm:text-sm font-bold transition flex items-center gap-2 active:scale-95">
+                    <span>🔊</span> Escuchar de nuevo
+                </button>
+
+                <button id="copyBtn" class="px-4 py-2.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-neoncyan border border-neoncyan/20 text-xs sm:text-sm font-bold transition flex items-center gap-2 active:scale-95">
+                    <span id="copyIcon">📲</span>
+                    <span id="copyText">Copiar para WhatsApp/TikTok</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Big Trigger Button -->
+        <div class="w-full max-w-md flex flex-col items-center gap-2.5">
+            <button id="generateBtn" class="w-full py-4 sm:py-5 px-8 rounded-2xl bg-gradient-to-r from-neonpink via-[#ff1a66] to-neonpurple hover:brightness-110 text-white font-display font-extrabold text-xl sm:text-2xl uppercase tracking-wider btn-brutal flex items-center justify-center gap-3 cursor-pointer select-none">
+                <span id="btnEmoji">👻</span>
+                <span id="btnLabel">BARDEAR AHORA</span>
+            </button>
+            <p class="text-[11px] sm:text-xs text-zinc-500 text-center">
+                Apretá <kbd class="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-300 font-mono">Espacio</kbd> para seguir restando aura sin parar.
+            </p>
+        </div>
+
+    </main>
+
+    <!-- Custom Toast Notification (replaces alert()) -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 translate-y-20 opacity-0 pointer-events-none transition-all duration-300 z-50 bg-neonyellow text-zinc-950 font-bold text-sm px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2">
+        <span>✅</span>
+        <span id="toastMessage">¡Bardeo copiado!</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="w-full py-3 px-4 text-center text-[11px] text-zinc-600">
+        Detector de Aura & Fantasmas • 100% humor de internet entre pibes.
+    </footer>
+
+    <script>
+        /**
+         * LISTA ESTRICTA Y ÚNICA DE NOMBRES PERMITIDOS
+         * Solo estos 10 nombres pueden aparecer en los insultos.
+         */
+        const ALLOWED_NAMES = [
+            "Tadeo",
+            "Franco",
+            "Nico",
+            "César",
+            "Joaquín",
+            "Fabri",
+            "Josué",
+            "Alejandro",
+            "Enzo",
+            "Valentino"
+        ];
+
+        /**
+         * Banco amplio (+54 plantillas) de bardeos con jerga joven actual, TikTok, aura,
+         * fantasmas, inútiles, NPCs y memes. Todas contienen {NOMBRE} obligatoriamente.
+         */
+        const ROAST_TEMPLATES = {
+            suave: [
+                "{NOMBRE}, tenés menos aura que un tutorial de cómo abrir un PDF, dejá de fantasmear.",
+                "El prime de {NOMBRE} duró lo mismo que un TikTok de 3 segundos y encima fue puro humo.",
+                "{NOMBRE} se cree el protagonista de un edit de TikTok y no llega ni a NPC de fondo.",
+                "Che {NOMBRE}, hasta el algoritmo de TikTok te scrollea de largo de lo fantasma que sos.",
+                "{NOMBRE} quiso farmear aura ayer y terminó dando más cringe que un audio de 2020.",
+                "{NOMBRE} vive en modo espectador, opina de todo y no resuelve ni un captcha, qué inútil.",
+                "A {NOMBRE} le cargó el cerebro al 1% y se quedó en pantalla de carga todo el día.",
+                "{NOMBRE} tiene el mismo impacto en el grupo que un mensaje borrado antes de leerse.",
+                "Cuando {NOMBRE} intenta tirar facha, automáticamente le bajan 500 puntos de aura por fantasma.",
+                "{NOMBRE} es ese NPC que te repite el mismo diálogo aburrido cada vez que abrís el chat.",
+                "La batería social y el aura de {NOMBRE} vienen falladas de fábrica.",
+                "{NOMBRE} se hace el misterioso en redes y en la vida real es más inútil que bocina de avión.",
+                "Ni con tres filtros de TikTok y música épica de fondo {NOMBRE} logra juntar algo de aura.",
+                "{NOMBRE} está tan delulu que piensa que alguien le cree las historias que inventa.",
+                "Si fantasmear diera plata, {NOMBRE} ya tendría más guita que todos nosotros juntos.",
+                "{NOMBRE} quiso hacer un trend y terminó inventando un nuevo nivel de cringe.",
+                "El aura de {NOMBRE} está en números rojos desde que aprendió a mandar audios.",
+                "{NOMBRE} aparece en el grupo solamente para demostrar lo inútil que puede ser en tiempo récord."
+            ],
+            picante: [
+                "A {NOMBRE} le dieron -10.000 de aura desde el día que nació y todavía no se recupera.",
+                "Che {NOMBRE}, sos tan fantasma que ni Casper te quiere en el grupo, terrible inútil.",
+                "Cuando {NOMBRE} entra al chat baja el aura colectiva de todo el grupo.",
+                "La única habilidad de {NOMBRE} es ser un inútil profesional con complejo de personaje principal.",
+                "{NOMBRE} tiene tanto brainrot en la cabeza que cuando piensa se escucha el sonido de Windows cerrándose.",
+                "{NOMBRE} se cree sigma y en realidad es el inútil que siempre queda último en todo.",
+                "Dejá de fantasmear {NOMBRE}, que todos sabemos que tu vida tiene menos trama que un fondo de pantalla.",
+                "{NOMBRE} quiso hacerse el interesante ghosteando y nadie se dio cuenta de que no estaba.",
+                "Si {NOMBRE} fuera un video de TikTok, tendría 0 likes, 0 guardados y 50 comentarios diciéndole fantasma.",
+                "{NOMBRE} tiene menos aura que pedir WiFi apenas llegás a un velorio.",
+                "A {NOMBRE} lo ponés a chambear dos minutos y te rompe hasta el bloc de notas, qué inútil.",
+                "{NOMBRE} es el típico fantasma que sube fotos como si fuera millonario y no tiene ni para cargar saldo.",
+                "Cada vez que {NOMBRE} abre la boca se escucha una alerta mundial de pérdida masiva de aura.",
+                "{NOMBRE} está tan pasado de cringe que hasta los bots de spam lo bloquean.",
+                "El nivel de fantasma de {NOMBRE} ya rompió el radar, no sirve ni para rellenar el grupo.",
+                "{NOMBRE} se quedó atrapado en su época más vendehumo y encima se cree que tiene aura.",
+                "No te hagas el distinto {NOMBRE}, que sos más predecible que un NPC caminando contra la pared.",
+                "{NOMBRE} tiene la audacia de criticar a los demás teniendo -50.000 de aura acumulada."
+            ],
+            sin_piedad: [
+                "{NOMBRE} tiene -999.999 de aura; si lo cruzás por la calle te contagia lo fantasma y lo inútil.",
+                "Dios creó a {NOMBRE} un viernes a última hora sin ganas, con 0 de aura y modo fantasma activado.",
+                "{NOMBRE} es la prueba viviente de que se puede respirar, usar TikTok y ser completamente inútil al mismo tiempo.",
+                "Ni poniendo a {NOMBRE} en un edit con phonk lento y cámara lenta lográs que deje de dar cringe.",
+                "El árbol genealógico de {NOMBRE} debe ser un círculo de fantasmas porque no se explica tanta inutilidad.",
+                "{NOMBRE}, sos tan vendehumo que si entrás a una habitación salta la alarma de incendios por fantasma.",
+                "Cuando repartieron el aura, {NOMBRE} estaba durmiendo la siesta y le encajaron el paquete completo de inútil.",
+                "{NOMBRE} tiene menos aura que un tutorial hecho con el bloc de notas y música de fondo saturada.",
+                "Si la inutilidad cotizara en bolsa, {NOMBRE} sería el dueño absoluto del planeta.",
+                "{NOMBRE} se cree protagonista de anime y no le da ni para extra que muere en el segundo capítulo.",
+                "La existencia digital de {NOMBRE} se resume en fantasmear, dar cringe y restar aura donde sea que vaya.",
+                "A {NOMBRE} le hacés un test de aura y la máquina explota marcando error fatal por exceso de fantasma.",
+                "{NOMBRE} es tan inútil que si lo mandás a buscar agua al mar vuelve con las manos vacías y un edit triste.",
+                "Dejá de hacerte el misterioso {NOMBRE}, que no sos oscuro ni profundo, sos un fantasma aburrido y sin aura.",
+                "El prime de {NOMBRE} nunca existió, fue una alucinación colectiva que él mismo inventó de lo delulu que es.",
+                "{NOMBRE} logra algo increíble: caer mal sin hacer nada, restar aura respirando y ser un inútil 24/7.",
+                "Hasta ChatGPT se queda sin palabras cuando intenta encontrarle una sola utilidad a {NOMBRE}.",
+                "{NOMBRE}, retirate del chat con dignidad porque con esa aura negativa ya no te salva ni un milagro."
+            ]
+        };
+
+        // App State
+        let currentLevel = 'picante';
+        let selectedTarget = 'ALL'; // 'ALL' or one of ALLOWED_NAMES
+        let roastCount = 0;
+        let totalAuraLost = 0;
+        let lastTemplate = '';
+        let nameDeck = []; // Shuffled deck to guarantee balanced, fair rotation of all 10 names
+        let voiceEnabled = true;
+        let sfxEnabled = true;
+        let audioInitialized = false;
+        let synth = null;
+
+        // DOM Elements
+        const insultTextEl = document.getElementById('insultText');
+        const insultCardEl = document.getElementById('insultCard');
+        const generateBtn = document.getElementById('generateBtn');
+        const btnLabel = document.getElementById('btnLabel');
+        const btnEmoji = document.getElementById('btnEmoji');
+        const insultCounterEl = document.getElementById('insultCounter');
+        const totalAuraCounterEl = document.getElementById('totalAuraCounter');
+        const victimBadgeEl = document.getElementById('victimBadge');
+        const auraLossTextEl = document.getElementById('auraLossText');
+        const intensityBadge = document.getElementById('intensityBadge');
+        const levelBtns = document.querySelectorAll('.level-btn');
+        const targetBtns = document.querySelectorAll('.target-btn');
+        const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+        const voiceStatusText = document.getElementById('voiceStatusText');
+        const sfxToggleBtn = document.getElementById('sfxToggleBtn');
+        const sfxIcon = document.getElementById('sfxIcon');
+        const speakNowBtn = document.getElementById('speakNowBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyIcon = document.getElementById('copyIcon');
+        const copyText = document.getElementById('copyText');
+        const toastEl = document.getElementById('toast');
+        const toastMessageEl = document.getElementById('toastMessage');
+
+        const buttonPrompts = [
+            "BARDEAR AHORA",
+            "RESTAR MÁS AURA",
+            "EXPONER FANTASMA",
+            "OTRO ROAST MÁS",
+            "HUMILLAR DE NUEVO",
+            "SEGUIR BARDEANDO"
+        ];
+
+        /**
+         * Devuelve un nombre de la lista estricta ALLOWED_NAMES.
+         * Si está en modo 'ALL', usa una bolsa mezclada (Fisher-Yates) para que salgan
+         * los 10 nombres de forma equilibrada y nunca falte uno.
+         */
+        function pickTargetName() {
+            if (selectedTarget !== 'ALL' && ALLOWED_NAMES.includes(selectedTarget)) {
+                return selectedTarget;
+            }
+            if (nameDeck.length === 0) {
+                nameDeck = [...ALLOWED_NAMES];
+                for (let i = nameDeck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [nameDeck[i], nameDeck[j]] = [nameDeck[j], nameDeck[i]];
+                }
+            }
+            return nameDeck.pop();
+        }
+
+        /**
+         * Calcula la cantidad dramática de Aura Restada según el nivel elegido.
+         */
+        function calculateAuraLoss() {
+            if (currentLevel === 'suave') {
+                const loss = (Math.floor(Math.random() * 5) + 5) * 100; // -500 a -900
+                totalAuraLost += loss;
+                return `-${loss.toLocaleString('es-AR')} Aura`;
+            } else if (currentLevel === 'picante') {
+                const loss = (Math.floor(Math.random() * 50) + 50) * 100; // -5.000 a -9.900
+                totalAuraLost += loss;
+                return `-${loss.toLocaleString('es-AR')} Aura`;
+            } else {
+                const loss = (Math.floor(Math.random() * 900) + 100) * 1000; // -100.000 a -999.000
+                totalAuraLost += loss;
+                return `-∞ (-${loss.toLocaleString('es-AR')}) Aura`;
+            }
+        }
+
+        /**
+         * Inicializa Tone.js tras la primera interacción del usuario
+         * para generar un sonido de golpe/impacto limpio sin archivos externos.
+         */
+        async function playImpactSound() {
+            if (!sfxEnabled) return;
+            try {
+                if (!audioInitialized && window.Tone) {
+                    await Tone.start();
+                    synth = new Tone.MembraneSynth({
+                        pitchDecay: 0.04,
+                        octaves: 4,
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.001, decay: 0.25, sustain: 0.01, release: 0.4 }
+                    }).toDestination();
+                    synth.volume.value = -6;
+                    audioInitialized = true;
+                }
+                if (synth) {
+                    const note = currentLevel === 'sin_piedad' ? 'C2' : (currentLevel === 'picante' ? 'E2' : 'G2');
+                    synth.triggerAttackRelease(note, "8n");
+                }
+            } catch (err) {
+                console.warn("Audio FX no disponible:", err);
+            }
+        }
+
+        /**
+         * Lee el bardeo en voz alta usando Web Speech API en español.
+         */
+        function speakInsult(text) {
+            if (!('speechSynthesis' in window)) return;
+            try {
+                window.speechSynthesis.cancel();
+                // Reemplazar símbolos que el sintetizador pueda leer raro
+                const cleanSpeechText = text.replace(/-∞/g, 'menos infinito');
+                const utterance = new SpeechSynthesisUtterance(cleanSpeechText);
+                utterance.lang = 'es-AR';
+                
+                const voices = window.speechSynthesis.getVoices();
+                const spanishVoice = voices.find(v => v.lang.includes('es-AR')) || 
+                                     voices.find(v => v.lang.includes('es-MX')) || 
+                                     voices.find(v => v.lang.startsWith('es'));
+                if (spanishVoice) {
+                    utterance.voice = spanishVoice;
+                }
+
+                if (currentLevel === 'sin_piedad') {
+                    utterance.rate = 1.08;
+                    utterance.pitch = 0.88;
+                } else if (currentLevel === 'picante') {
+                    utterance.rate = 1.05;
+                    utterance.pitch = 1.0;
+                } else {
+                    utterance.rate = 0.98;
+                    utterance.pitch = 1.08;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.warn("Síntesis de voz no soportada:", e);
+            }
+        }
+
+        /**
+         * Genera un nuevo roast garantizando que SIEMPRE contenga uno de los 10 nombres exactos.
+         */
+        function generateNewInsult() {
+            const pool = ROAST_TEMPLATES[currentLevel];
+            let template = '';
+            
+            do {
+                const randomIndex = Math.floor(Math.random() * pool.length);
+                template = pool[randomIndex];
+            } while (template === lastTemplate && pool.length > 1);
+
+            lastTemplate = template;
+            const victimName = pickTargetName();
+            const finalRoast = template.replace(/\{NOMBRE\}/g, victimName);
+
+            roastCount++;
+            const auraLossDisplay = calculateAuraLoss();
+
+            // Resaltar el nombre de la víctima visualmente dentro de la tarjeta
+            const escapedName = victimName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const highlightedHTML = `“${finalRoast.replace(
+                new RegExp(escapedName, 'g'),
+                `<span class="text-neonyellow underline decoration-neonpink decoration-2 underline-offset-4">${victimName}</span>`
+            )}”`;
+
+            insultTextEl.innerHTML = highlightedHTML;
+            insultCounterEl.textContent = roastCount;
+            totalAuraCounterEl.textContent = `Aura total destruida: -${totalAuraLost.toLocaleString('es-AR')}`;
+            victimBadgeEl.innerHTML = `👻 Fantasma: <span class="text-white ml-1">${victimName}</span>`;
+            auraLossTextEl.textContent = auraLossDisplay;
+
+            // Randomize CTA button text
+            const randomLabel = buttonPrompts[Math.floor(Math.random() * buttonPrompts.length)];
+            btnLabel.textContent = randomLabel;
+            btnEmoji.textContent = currentLevel === 'sin_piedad' ? '💀' : (currentLevel === 'picante' ? '🔥' : '👻');
+
+            // Trigger card impact shake & flash animation
+            insultCardEl.classList.remove('animate-impact');
+            void insultCardEl.offsetWidth;
+            insultCardEl.classList.add('animate-impact');
+
+            // Play sound effect & speak if enabled
+            playImpactSound();
+            if (voiceEnabled) {
+                speakInsult(finalRoast);
+            }
+        }
+
+        /**
+         * Cambia el nivel de intensidad y actualiza estilos visuales.
+         */
+        function setIntensity(level) {
+            currentLevel = level;
+
+            levelBtns.forEach(btn => {
+                const isSelected = btn.dataset.level === level;
+                btn.className = 'level-btn py-2 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 ';
+                
+                if (isSelected) {
+                    if (level === 'suave') {
+                        btn.className += 'bg-neoncyan text-zinc-950 shadow-md shadow-neoncyan/25';
+                    } else if (level === 'picante') {
+                        btn.className += 'bg-neonpink text-white shadow-md shadow-neonpink/25';
+                    } else {
+                        btn.className += 'bg-neonyellow text-zinc-950 shadow-md shadow-neonyellow/25';
+                    }
+                } else {
+                    btn.className += 'text-zinc-400 hover:text-white';
+                }
+            });
+
+            if (level === 'suave') {
+                intensityBadge.innerHTML = '😏 Suave';
+                intensityBadge.className = 'hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-neoncyan/15 text-neoncyan border border-neoncyan/30';
+                insultCardEl.style.borderColor = 'rgba(0, 240, 255, 0.35)';
+            } else if (level === 'picante') {
+                intensityBadge.innerHTML = '🌶️ Picante';
+                intensityBadge.className = 'hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-neonpink/15 text-neonpink border border-neonpink/30';
+                insultCardEl.style.borderColor = 'rgba(255, 0, 85, 0.45)';
+            } else {
+                intensityBadge.innerHTML = '💀 Sin Piedad';
+                intensityBadge.className = 'hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-neonyellow/15 text-neonyellow border border-neonyellow/30';
+                insultCardEl.style.borderColor = 'rgba(234, 255, 0, 0.5)';
+            }
+        }
+
+        /**
+         * Selecciona si el bardeo va para todos al azar o para una persona específica de la lista.
+         */
+        function setTarget(target) {
+            selectedTarget = target;
+            targetBtns.forEach(btn => {
+                const isSelected = btn.dataset.target === target;
+                if (isSelected) {
+                    btn.className = 'target-btn px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all bg-neonpurple text-white shadow-md shadow-neonpurple/40 scale-105';
+                } else {
+                    btn.className = 'target-btn px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700';
+                }
+            });
+        }
+
+        /**
+         * Muestra una notificación flotante temporal.
+         */
+        let toastTimeout;
+        function showToast(msg) {
+            toastMessageEl.textContent = msg;
+            toastEl.classList.remove('translate-y-20', 'opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toastEl.classList.add('translate-y-20', 'opacity-0');
+            }, 2200);
+        }
+
+        /**
+         * Copia el bardeo actual listo para pegar en WhatsApp o TikTok.
+         */
+        function copyCurrentInsult() {
+            const rawText = insultTextEl.textContent.replace(/^“|”$/g, '').trim();
+            const auraTag = auraLossTextEl.textContent;
+            const formattedShare = `${rawText} (${auraTag} 👻📉)`;
+
+            const tempInput = document.createElement('textarea');
+            tempInput.value = formattedShare;
+            tempInput.style.position = 'fixed';
+            tempInput.style.opacity = '0';
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+                copyIcon.textContent = '✅';
+                copyText.textContent = '¡Copiado!';
+                showToast('¡Listo para mandar al grupo de WhatsApp!');
+                setTimeout(() => {
+                    copyIcon.textContent = '📲';
+                    copyText.textContent = 'Copiar para WhatsApp/TikTok';
+                }, 1800);
+            } catch (err) {
+                showToast('No se pudo copiar el texto.');
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        // Event Listeners
+        generateBtn.addEventListener('click', generateNewInsult);
+
+        levelBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setIntensity(btn.dataset.level);
+                generateNewInsult();
+            });
+        });
+
+        targetBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setTarget(btn.dataset.target);
+                generateNewInsult();
+            });
+        });
+
+        voiceToggleBtn.addEventListener('click', () => {
+            voiceEnabled = !voiceEnabled;
+            voiceStatusText.textContent = voiceEnabled ? 'ON' : 'OFF';
+            if (voiceEnabled) {
+                voiceToggleBtn.className = 'p-2.5 rounded-xl bg-zinc-900 border border-neoncyan/40 text-neoncyan hover:bg-neoncyan/10 transition flex items-center gap-1.5 text-xs font-bold';
+                showToast('Voz activada');
+            } else {
+                window.speechSynthesis && window.speechSynthesis.cancel();
+                voiceToggleBtn.className = 'p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-zinc-300 transition flex items-center gap-1.5 text-xs font-bold';
+                showToast('Voz silenciada');
+            }
+        });
+
+        sfxToggleBtn.addEventListener('click', () => {
+            sfxEnabled = !sfxEnabled;
+            sfxIcon.textContent = sfxEnabled ? '🔊' : '🔇';
+            sfxToggleBtn.classList.toggle('opacity-50', !sfxEnabled);
+            showToast(sfxEnabled ? 'Sonidos activados' : 'Sonidos desactivados');
+        });
+
+        speakNowBtn.addEventListener('click', () => {
+            const cleanText = insultTextEl.textContent.replace(/^“|”$/g, '');
+            speakInsult(cleanText);
+        });
+
+        copyBtn.addEventListener('click', copyCurrentInsult);
+
+        // Keyboard shortcut: Spacebar triggers a new roast
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && document.activeElement.tagName !== 'BUTTON') {
+                e.preventDefault();
+                generateNewInsult();
+            }
+        });
+
+        // Preload voices on browsers that load them asynchronously
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+    </script>
+</body>
+</html>
